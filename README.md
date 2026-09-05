@@ -255,8 +255,12 @@ python -m pip install -r requirements-streamlit.txt
 streamlit run streamlit_app.py
 ```
 
-The dashboard opens on `http://localhost:8501`. You can also upload another CSV from the
-sidebar as long as it contains the same six result columns.
+The dashboard opens on `http://localhost:8501`. It reads the managed results file directly,
+so users do not need to upload a data file. Use **Refresh data** in the sidebar after the
+Spark pipeline writes new results.
+
+The dashboard contains four views: an overview, revenue analysis, trip metrics, and a
+filtered data table with CSV download.
 
 ### Deploy the dashboard to Streamlit Community Cloud
 
