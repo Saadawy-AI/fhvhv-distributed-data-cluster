@@ -1,0 +1,16 @@
+# Large datasets and tarballs
+data/*.parquet
+*.parquet
+*.tar
+
+# Temp logs and system generated
+.system_generated/
+.superpowers/
+*.log
+__pycache__/
+.idea/
+.vscode/
+jars/aws-java-sdk-bundle-1.11.1026.jar
+j a r s / a w s - j a v a - s d k - b u n d l e - 1 . 1 1 . 1 0 2 6 . j a r  
+docs/
+ 

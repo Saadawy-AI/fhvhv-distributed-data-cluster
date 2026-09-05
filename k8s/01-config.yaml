@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bigdata-config
+  namespace: bigdata
+data:
+  KAFKA_BOOTSTRAP_SERVERS: kafka.bigdata.svc.cluster.local:9092
+  SPARK_MASTER_URL: spark://spark-master.bigdata.svc.cluster.local:7077
+  MINIO_ENDPOINT: http://minio.bigdata.svc.cluster.local:9000
+  BRONZE_BUCKET: bronze
+  SILVER_BUCKET: silver
+  GOLD_BUCKET: gold
+  SPARK_WORKER_CORES: "2"
+  SPARK_WORKER_MEMORY: 2G

@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: spark-worker
+  namespace: bigdata
+spec:
+  selector:
+    matchLabels:
+      app: spark-worker
+  template:
+    metadata:
+      labels:
+        app: spark-worker
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role
+                    operator: In
+                    values: [worker]
+      initContainers:
+        - name: bootstrap-s3a-jars
+          image: curlimages/curl:8.17.0
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              curl --fail --location --retry 5 --retry-all-errors \
+                --output /s3a-jars/hadoop-aws-3.3.2.jar \
+                https://repo.maven.apache.org/maven2/org/apache/hadoop/hadoop-aws/3.3.2/hadoop-aws-3.3.2.jar
+              curl --fail --location --retry 5 --retry-all-errors \
+                --output /s3a-jars/aws-java-sdk-core-1.11.1026.jar \
+                https://repo.maven.apache.org/maven2/com/amazonaws/aws-java-sdk-core/1.11.1026/aws-java-sdk-core-1.11.1026.jar
+              curl --fail --location --retry 5 --retry-all-errors \
+                --output /s3a-jars/aws-java-sdk-s3-1.11.1026.jar \
+                https://repo.maven.apache.org/maven2/com/amazonaws/aws-java-sdk-s3/1.11.1026/aws-java-sdk-s3-1.11.1026.jar
+              curl --fail --location --retry 5 --retry-all-errors \
+                --output /s3a-jars/aws-java-sdk-kms-1.11.1026.jar \
+                https://repo.maven.apache.org/maven2/com/amazonaws/aws-java-sdk-kms/1.11.1026/aws-java-sdk-kms-1.11.1026.jar
+              curl --fail --location --retry 5 --retry-all-errors \
+                --output /s3a-jars/aws-java-sdk-dynamodb-1.11.1026.jar \
+                https://repo.maven.apache.org/maven2/com/amazonaws/aws-java-sdk-dynamodb/1.11.1026/aws-java-sdk-dynamodb-1.11.1026.jar
+              curl --fail --location --retry 5 --retry-all-errors \
+                --output /s3a-jars/jmespath-java-1.11.1026.jar \
+                https://repo.maven.apache.org/maven2/com/amazonaws/jmespath-java/1.11.1026/jmespath-java-1.11.1026.jar
+          volumeMounts:
+            - name: s3a-jars
+              mountPath: /s3a-jars
+      containers:
+        - name: spark-worker
+          image: bde2020/spark-worker:3.3.0-hadoop3.3
+          env:
+            - name: SPARK_MASTER
+              value: spark://spark-master.bigdata.svc.cluster.local:7077
+            - name: SPARK_WORKER_WEBUI_PORT
+              value: "8081"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bigdata-secrets
+                  key: MINIO_ROOT_USER
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bigdata-secrets
+                  key: MINIO_ROOT_PASSWORD
+          ports:
+            - name: ui
+              containerPort: 8081
+          volumeMounts:
+            - name: s3a-jars
+              mountPath: /spark/jars/hadoop-aws-3.3.2.jar
+              subPath: hadoop-aws-3.3.2.jar
+            - name: s3a-jars
+              mountPath: /spark/jars/aws-java-sdk-core-1.11.1026.jar
+              subPath: aws-java-sdk-core-1.11.1026.jar
+            - name: s3a-jars
+              mountPath: /spark/jars/aws-java-sdk-s3-1.11.1026.jar
+              subPath: aws-java-sdk-s3-1.11.1026.jar
+            - name: s3a-jars
+              mountPath: /spark/jars/aws-java-sdk-kms-1.11.1026.jar
+              subPath: aws-java-sdk-kms-1.11.1026.jar
+            - name: s3a-jars
+              mountPath: /spark/jars/aws-java-sdk-dynamodb-1.11.1026.jar
+              subPath: aws-java-sdk-dynamodb-1.11.1026.jar
+            - name: s3a-jars
+              mountPath: /spark/jars/jmespath-java-1.11.1026.jar
+              subPath: jmespath-java-1.11.1026.jar
+      volumes:
+        - name: s3a-jars
+          emptyDir: {}

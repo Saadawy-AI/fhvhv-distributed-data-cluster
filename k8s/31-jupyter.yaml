@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyter
+  namespace: bigdata
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: jupyter}}
+  template:
+    metadata: {labels: {app: jupyter}}
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeName: moamen
+      tolerations:
+        - operator: "Exists"
+      containers:
+        - name: jupyter
+          image: bigdata-lab-jupyter:s3a-v4
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              sed -i 's|/opt/conda/bin/python|/opt/conda-repaired/bin/python|g' /opt/conda/share/jupyter/kernels/python3/kernel.json /opt/conda-repaired/share/jupyter/kernels/python3/kernel.json 2>/dev/null || true
+              exec /opt/conda-repaired/bin/python -m jupyterlab --ip=0.0.0.0 --port=8888 --no-browser --ServerApp.token=lab --ServerApp.root_dir=/workspace --ServerApp.allow_origin='*' --ServerApp.allow_remote_access=True --ServerApp.disable_check_xsrf=True
+          env:
+            - name: SPARK_EXECUTOR_MEMORY
+              value: "2g"
+            - name: SPARK_DRIVER_MEMORY
+              value: "2g"
+            - name: SPARK_CONF_DIR
+              value: "/opt/conda-repaired/lib/python3.10/site-packages/pyspark/conf"
+            - name: JUPYTER_TOKEN
+              value: lab
+            - name: JUPYTER_SERVER_ROOT_DIR
+              value: /workspace
+            - name: SPARK_DRIVER_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: SPARK_LOCAL_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bigdata-secrets
+                  key: MINIO_ROOT_USER
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bigdata-secrets
+                  key: MINIO_ROOT_PASSWORD
+          ports: [{name: ui, containerPort: 8888}]
+          readinessProbe:
+            httpGet:
+              path: /lab
+              port: ui
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: spark-defaults
+              mountPath: /opt/conda-repaired/lib/python3.10/site-packages/pyspark/conf/spark-defaults.conf
+              subPath: spark-defaults.conf
+            - name: project-workspace
+              mountPath: /workspace
+      volumes:
+        - name: spark-defaults
+          configMap:
+            name: jupyter-spark-defaults
+        - name: project-workspace
+          hostPath:
+            path: /mnt/d/Big Data/Project/bigdata-lab/bigdata-lab
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jupyter
+  namespace: bigdata
+spec:
+  type: NodePort
+  selector: {app: jupyter}
+  ports: [{name: ui, port: 8888, targetPort: 8888, nodePort: 32088}]

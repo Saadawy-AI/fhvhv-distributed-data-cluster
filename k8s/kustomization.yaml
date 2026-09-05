@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - 00-namespace.yaml
+  - 01-config.yaml
+  - 10-storage.yaml
+  - 11-kafka.yaml
+  - 12-minio.yaml
+  - 13-postgres.yaml
+  - 20-spark-master.yaml
+  - 21-spark-workers.yaml
+  - 30-airflow.yaml
+  - 31-jupyter.yaml
+  - 32-jupyter-spark-config.yaml
+  - 40-kafka-ui.yaml

@@ -1,0 +1,11 @@
+# K3s supplies the local-path StorageClass. Each StatefulSet below claims a
+# dedicated durable volume; MinIO is the shared object-store interface.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: data-lake-layout
+  namespace: bigdata
+data:
+  bronze: s3a://bronze/
+  silver: s3a://silver/
+  gold: s3a://gold/

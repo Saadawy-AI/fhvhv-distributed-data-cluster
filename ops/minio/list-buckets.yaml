@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: list-minio-buckets
+  namespace: bigdata
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role
+                    operator: In
+                    values: [master]
+      containers:
+        - name: minio-client
+          image: minio/mc:latest
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              mc alias set cluster http://minio.bigdata.svc.cluster.local:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+              mc ls cluster
+          envFrom:
+            - secretRef:
+                name: bigdata-secrets

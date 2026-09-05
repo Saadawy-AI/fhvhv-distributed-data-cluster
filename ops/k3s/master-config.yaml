@@ -1,0 +1,5 @@
+node-ip: 100.111.175.49
+advertise-address: 100.111.175.49
+tls-san:
+  - 100.111.175.49
+flannel-iface: tailscale0

@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-thrift-server
+  namespace: bigdata
+  labels:
+    app: spark-thrift-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-thrift-server
+  template:
+    metadata:
+      labels:
+        app: spark-thrift-server
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: thrift-server
+          image: bigdata-lab-jupyter:s3a-v4
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              export SPARK_DRIVER_HOST="100.111.175.49"
+              export SPARK_LOCAL_IP="100.111.175.49"
+              /opt/conda/bin/spark-submit \
+                --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2 \
+                --name "PowerBI-Thrift-Server" \
+                --master spark://spark-master:7077 \
+                --conf spark.executor.memory=2g \
+                --conf spark.executor.cores=4 \
+                --conf spark.ui.port=4043 \
+                --conf spark.sql.warehouse.dir=s3a://gold/warehouse \
+                --hiveconf hive.server2.thrift.port=10001 \
+                --hiveconf hive.server2.thrift.bind.host=0.0.0.0
+          ports:
+            - containerPort: 10001
+              name: jdbc
+            - containerPort: 4043
+              name: webui
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bigdata-secrets
+                  key: MINIO_ROOT_USER
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bigdata-secrets
+                  key: MINIO_ROOT_PASSWORD
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1"
+            limits:
+              memory: "4Gi"
+              cpu: "2"
+          volumeMounts:
+            - name: spark-conf
+              mountPath: /opt/conda/conf
+            - name: ivy-cache
+              mountPath: /root/.ivy2
+            - name: spark-jars
+              mountPath: /opt/conda/lib/python3.10/site-packages/pyspark/jars
+      volumes:
+        - name: spark-conf
+          configMap:
+            name: jupyter-spark-defaults
+        - name: ivy-cache
+          emptyDir: {}
+        - name: spark-jars
+          hostPath:
+            path: /mnt/wsl/k3s-spark-jars
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-thrift-server
+  namespace: bigdata
+spec:
+  type: ClusterIP
+  selector:
+    app: spark-thrift-server
+  ports:
+    - port: 10001
+      targetPort: 10001
+      name: jdbc
+    - port: 4043
+      targetPort: 4043
+      name: webui

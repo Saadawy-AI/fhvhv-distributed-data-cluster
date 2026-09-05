@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: upload-merged-fhvhv-2025
+  namespace: bigdata
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: OnFailure
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role
+                    operator: In
+                    values: [master]
+      containers:
+        - name: minio-client
+          image: minio/mc:latest
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              mc alias set cluster http://minio.bigdata.svc.cluster.local:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+              mc mb --ignore-existing cluster/bronze
+              mc cp --json /source/fhvhv_tripdata_2025.parquet cluster/bronze/fhvhv/2025/fhvhv_tripdata_2025.parquet
+          envFrom:
+            - secretRef:
+                name: bigdata-secrets
+          volumeMounts:
+            - name: source-data
+              mountPath: /source
+              readOnly: true
+      volumes:
+        - name: source-data
+          hostPath:
+            path: /mnt/d/Big Data/Project/bigdata-lab/bigdata-lab/data
+            type: Directory

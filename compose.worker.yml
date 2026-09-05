@@ -1,0 +1,74 @@
+name: bigdata-lab-worker
+
+# =============================================================================
+# Worker Node — runs DataNode (HDFS) + Spark Worker
+# Each worker laptop runs this compose file.
+# Set MASTER_HOST and WORKER_HOST in .env.worker before starting.
+# =============================================================================
+
+networks:
+  worker-net:
+
+volumes:
+  datanode_data:
+
+services:
+  # ---------------------------------------------------------------------------
+  # HDFS DataNode
+  # ---------------------------------------------------------------------------
+  datanode:
+    image: bde2020/hadoop-datanode:${HADOOP_IMAGE_TAG}
+    container_name: datanode
+    hostname: datanode-${WORKER_HOST}
+    restart: unless-stopped
+    env_file:
+      - .env.worker
+    environment:
+      SERVICE_PRECONDITION: "${MASTER_HOST}:9000"
+      CORE_CONF_fs_defaultFS: "hdfs://${MASTER_HOST}:9000"
+      CORE_CONF_hadoop_http_staticuser_user: root
+      CORE_CONF_hadoop_proxyuser_hue_hosts: "*"
+      CORE_CONF_hadoop_proxyuser_hue_groups: "*"
+      CORE_CONF_io_compression_codecs: org.apache.hadoop.io.compress.SnappyCodec
+      HDFS_CONF_dfs_webhdfs_enabled: "true"
+      HDFS_CONF_dfs_permissions_enabled: "false"
+      HDFS_CONF_dfs_replication: "${HDFS_REPLICATION}"
+      HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check: "false"
+      HDFS_CONF_dfs_datanode_hostname: "${WORKER_HOST}"
+      HDFS_CONF_dfs_datanode_use_datanode_hostname: "true"
+      HDFS_CONF_dfs_datanode_address: "0.0.0.0:${DATANODE_PORT:-9866}"
+      HDFS_CONF_dfs_datanode_http_address: "0.0.0.0:${DATANODE_UI_PORT:-9864}"
+      HDFS_CONF_dfs_datanode_ipc_address: "0.0.0.0:${DATANODE_IPC_PORT:-9867}"
+    ports:
+      - "${DATANODE_UI_PORT:-9864}:${DATANODE_UI_PORT:-9864}"
+      - "${DATANODE_PORT:-9866}:${DATANODE_PORT:-9866}"
+      - "${DATANODE_IPC_PORT:-9867}:${DATANODE_IPC_PORT:-9867}"
+    volumes:
+      - datanode_data:/hadoop/dfs/data
+    networks: [worker-net]
+
+  # ---------------------------------------------------------------------------
+  # Spark Worker — connects to Spark Master on the master node
+  # ---------------------------------------------------------------------------
+  spark-worker:
+    image: bde2020/spark-worker:${SPARK_IMAGE_TAG}
+    container_name: spark-worker
+    hostname: spark-worker
+    restart: unless-stopped
+    env_file:
+      - .env.worker
+    environment:
+      SPARK_MASTER: "spark://${MASTER_HOST}:7077"
+      SPARK_WORKER_PORT: "${SPARK_WORKER_PORT:-7078}"
+      SPARK_WORKER_WEBUI_PORT: "${SPARK_WORKER_UI_PORT:-8081}"
+      SPARK_WORKER_MEMORY: "${SPARK_WORKER_MEMORY}"
+      SPARK_WORKER_CORES: "${SPARK_WORKER_CORES}"
+      SPARK_PUBLIC_DNS: "${WORKER_HOST}"
+      HDFS_NAMENODE: "hdfs://${MASTER_HOST}:9000"
+    ports:
+      - "${SPARK_WORKER_UI_PORT:-8081}:${SPARK_WORKER_UI_PORT:-8081}"
+      - "${SPARK_WORKER_PORT:-7078}:${SPARK_WORKER_PORT:-7078}"
+    volumes:
+      - ./spark/apps:/opt/spark-apps
+    networks: [worker-net]
+
