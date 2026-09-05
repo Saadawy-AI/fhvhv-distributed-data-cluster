@@ -260,7 +260,8 @@ so users do not need to upload a data file. Use **Refresh data** in the sidebar 
 Spark pipeline writes new results.
 
 The dashboard contains four views: an overview, revenue analysis, trip metrics, and a
-filtered data table with CSV download.
+filtered data table with CSV download. The sidebar includes `Auto`, `Light`, and `Dark`
+appearance modes; `Auto` follows the device preference.
 
 ### Deploy the dashboard to Streamlit Community Cloud
 
