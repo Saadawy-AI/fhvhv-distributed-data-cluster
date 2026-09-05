@@ -1,0 +1,96 @@
+[33mdbee261[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m first commit
+ .env                                               |   41 [32m+[m
+ .env.master                                        |   42 [32m+[m
+ .env.master.example                                |   42 [32m+[m
+ .env.worker                                        |   46 [32m+[m
+ .env.worker.example                                |   40 [32m+[m
+ .gitignore                                         |   16 [32m+[m
+ ...esuming Big Data Kubernetes Setup-checkpoint.md | 1887 [32m++++++++++++++++++++[m
+ .ipynb_checkpoints/null-checkpoint                 |    0
+ .../spark_nyc_taxi_job-checkpoint.py               |   63 [32m+[m
+ README.md                                          |  281 [32m+++[m
+ airflow/dags/bigdata_fhvhv_pipeline.py             |  398 [32m+++++[m
+ airflow/dags/pipeline_hdfs_kafka_spark.py          |  106 [32m++[m
+ airflow/docker/Dockerfile                          |   41 [32m+[m
+ airflow/docker/build.sh                            |   52 [32m+[m
+ airflow/docker/requirements.txt                    |    4 [32m+[m
+ compose.master.yml                                 |  220 [32m+++[m
+ compose.worker.yml                                 |   74 [32m+[m
+ copy_jars.sh                                       |   21 [32m+[m
+ data/nyc_taxi_analysis_results.csv                 |    7 [32m+[m
+ docker-compose.yml                                 |  222 [32m+++[m
+ hadoop/hadoop.env                                  |   12 [32m+[m
+ jars/README.md                                     |   22 [32m+[m
+ jars/hadoop-aws-3.3.2.jar                          |  Bin [31m0[m -> [32m962696[m bytes
+ jupyter/Dockerfile                                 |   40 [32m+[m
+ .../00_environment_check-checkpoint.ipynb          |   76 [32m+[m
+ .../01_kafka_ingest_nyc_taxi-checkpoint.ipynb      |  362 [32m++++[m
+ .../02_spark_streaming_bronze-checkpoint.ipynb     |  275 [32m+++[m
+ jupyter/notebooks/00_environment_check.ipynb       |   99 [32m+[m
+ jupyter/notebooks/01_kafka_ingest_nyc_taxi.ipynb   |  401 [32m+++++[m
+ jupyter/notebooks/02_spark_streaming_bronze.ipynb  |  291 [32m+++[m
+ ...nyc_taxi_distributed_benchmark-checkpoint.ipynb |  101 [32m++[m
+ ...eavy_cpu_benchmark_distributed-checkpoint.ipynb |   70 [32m+[m
+ .../01_nyc_taxi_distributed_benchmark.ipynb        |  187 [32m++[m
+ .../02_heavy_cpu_benchmark_distributed.ipynb       |  103 [32m++[m
+ jupyter/spark-defaults.conf                        |    8 [32m+[m
+ k8s/00-namespace.yaml                              |    4 [32m+[m
+ k8s/01-config.yaml                                 |   14 [32m+[m
+ k8s/02-secrets.example.yaml                        |   15 [32m+[m
+ k8s/02-secrets.yaml                                |   14 [32m+[m
+ k8s/10-storage.yaml                                |   11 [32m+[m
+ k8s/11-kafka.yaml                                  |   84 [32m+[m
+ k8s/12-minio.yaml                                  |   65 [32m+[m
+ k8s/13-postgres.yaml                               |   58 [32m+[m
+ k8s/20-spark-master.yaml                           |   76 [32m+[m
+ k8s/21-spark-workers.yaml                          |   92 [32m+[m
+ k8s/30-airflow.yaml                                |  227 [32m+++[m
+ k8s/31-jupyter.yaml                                |   86 [32m+[m
+ k8s/32-jupyter-spark-config.yaml                   |   18 [32m+[m
+ k8s/33-spark-thrift-server.yaml                    |   95 [32m+[m
+ k8s/40-kafka-ui.yaml                               |   35 [32m+[m
+ k8s/kustomization.yaml                             |   15 [32m+[m
+ ...igData_FHVHV_Part_A_Processing-checkpoint.ipynb |  518 [32m++++++[m
+ .../BigData_FHVHV_Part_B_ML-checkpoint.ipynb       |   18 [32m+[m
+ ...Data_Spark_ML_Cluster_upgraded-checkpoint.ipynb |  948 [32m++++++++++[m
+ .../FHVHV_ML_Visualization-checkpoint.ipynb        | 1510 [32m++++++++++++++++[m
+ notebooks/BigData_FHVHV_Part_A_Processing.ipynb    |  642 [32m+++++++[m
+ notebooks/BigData_FHVHV_Part_B_ML.ipynb            |  297 [32m+++[m
+ notebooks/BigData_Spark_ML_Cluster_upgraded.ipynb  |  987 [32m++++++++++[m
+ notebooks/FHVHV_ML_Visualization.ipynb             | 1510 [32m++++++++++++++++[m
+ ops/k3s/master-config.yaml                         |    5 [32m+[m
+ ops/minio/bootstrap-buckets.yaml                   |   32 [32m+[m
+ ops/minio/list-buckets.yaml                        |   29 [32m+[m
+ ops/minio/upload-merged-fhvhv-2025.yaml            |   39 [32m+[m
+ ops/minio/verify-merged-fhvhv-2025.yaml            |   29 [32m+[m
+ ops/systemd/k3s-agent-tailscale-mtu.conf           |    6 [32m+[m
+ ops/systemd/k3s-tailscale-mtu.conf                 |    7 [32m+[m
+ ops/upload-s3a-jars.py                             |   28 [32m+[m
+ ops/verify-s3a-readiness.py                        |   28 [32m+[m
+ requirements-streamlit.txt                         |    3 [32m+[m
+ scripts/merge_fhvhv_2025.py                        |   42 [32m+[m
+ spark/apps/batch_wordcount.py                      |   58 [32m+[m
+ .../apps/com.google.code.findbugs_jsr305-3.0.0.jar |  Bin [31m0[m -> [32m33031[m bytes
+ .../apps/commons-logging_commons-logging-1.1.3.jar |  Bin [31m0[m -> [32m62050[m bytes
+ spark/apps/live_worker_demo.py                     |   38 [32m+[m
+ .../org.apache.commons_commons-pool2-2.11.1.jar    |  Bin [31m0[m -> [32m145516[m bytes
+ .../org.apache.hadoop_hadoop-client-api-3.3.2.jar  |  Bin [31m0[m -> [32m19458502[m bytes
+ ...g.apache.hadoop_hadoop-client-runtime-3.3.2.jar |  Bin [31m0[m -> [32m30498151[m bytes
+ .../apps/org.apache.kafka_kafka-clients-2.8.1.jar  |  Bin [31m0[m -> [32m4614888[m bytes
+ ...pache.spark_spark-sql-kafka-0-10_2.12-3.3.0.jar |  Bin [31m0[m -> [32m423324[m bytes
+ ..._spark-token-provider-kafka-0-10_2.12-3.3.0.jar |  Bin [31m0[m -> [32m56995[m bytes
+ spark/apps/org.lz4_lz4-java-1.8.0.jar              |  Bin [31m0[m -> [32m682804[m bytes
+ spark/apps/org.slf4j_slf4j-api-1.7.32.jar          |  Bin [31m0[m -> [32m41513[m bytes
+ .../apps/org.spark-project.spark_unused-1.0.0.jar  |  Bin [31m0[m -> [32m2777[m bytes
+ .../apps/org.xerial.snappy_snappy-java-1.1.8.4.jar |  Bin [31m0[m -> [32m1970939[m bytes
+ spark/apps/parallel_worker_probe.py                |   23 [32m+[m
+ spark/apps/spark_sql_demo.py                       |   49 [32m+[m
+ spark/apps/streaming_kafka_to_hdfs.py              |   83 [32m+[m
+ streamlit_app.py                                   |  234 [32m+++[m
+ tests/validate-compose.ps1                         |   25 [32m+[m
+ tests/validate-distributed-settings.ps1            |   23 [32m+[m
+ tests/validate-fhvhv-notebooks.ps1                 |   50 [32m+[m
+ tests/validate-jupyter-s3a.ps1                     |   27 [32m+[m
+ tests/validate-kubernetes-manifests.ps1            |   57 [32m+[m
+ tests/validate-s3a-migration.ps1                   |   18 [32m+[m
+ 94 files changed, 13922 insertions(+)

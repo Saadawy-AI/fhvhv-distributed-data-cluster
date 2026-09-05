@@ -229,6 +229,9 @@ sudo k3s kubectl get pods -n bigdata -o wide
 
 ## Parallel Computing Results
 
+Spark automatically partitions datasets and distributes workload across all 3 worker nodes
+simultaneously, enabling scalable parallel processing.
+
 With all 3 worker nodes active:
 
 ```
@@ -258,14 +261,12 @@ sidebar as long as it contains the same six result columns.
 ### Deploy the dashboard to Streamlit Community Cloud
 
 1. Push this repository to GitHub.
-2. Create an app at `share.streamlit.io`.
+2. Open `https://share.streamlit.io` and create a new app.
 3. Select the repository, branch, and `streamlit_app.py` as the main file.
-4. Set the Python dependencies file to `requirements-streamlit.txt` if prompted.
+4. Keep the dependency file as the root `requirements.txt`; Streamlit Cloud detects it automatically.
 
 The Big Data cluster itself should continue running on Docker/Kubernetes infrastructure;
 Streamlit is the presentation layer for the generated results.
-
-Spark automatically partitions datasets and distributes workload across all 3 worker nodes simultaneously, enabling scalable parallel processing.
 
 ---
 
