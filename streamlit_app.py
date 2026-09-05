@@ -1,4 +1,3 @@
-from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
@@ -88,8 +87,8 @@ st.markdown(
 
 
 @st.cache_data(show_spinner=False)
-def load_csv(source: bytes) -> pd.DataFrame:
-    dataframe = pd.read_csv(BytesIO(source))
+def load_csv(data_path: str, modified_time: float) -> pd.DataFrame:
+    dataframe = pd.read_csv(data_path)
     missing_columns = sorted(REQUIRED_COLUMNS - set(dataframe.columns))
     if missing_columns:
         raise ValueError(
@@ -99,6 +98,17 @@ def load_csv(source: bytes) -> pd.DataFrame:
     numeric_columns = sorted(REQUIRED_COLUMNS)
     for column in numeric_columns:
         dataframe[column] = pd.to_numeric(dataframe[column], errors="coerce")
+
+    invalid_values = {
+        column: int((dataframe[column] < 0).sum())
+        for column in numeric_columns
+        if (dataframe[column] < 0).any()
+    }
+    if invalid_values:
+        raise ValueError(
+            "Negative values found in: "
+            + ", ".join(invalid_values.keys())
+        )
 
     dataframe = dataframe.dropna(subset=numeric_columns).copy()
     dataframe["passenger_count"] = dataframe["passenger_count"].astype(int)
@@ -112,22 +122,23 @@ def format_currency(value: float) -> str:
 
 
 def render_sidebar() -> tuple[pd.DataFrame, list[int]]:
-    st.sidebar.markdown("## Data source")
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload an analysis CSV",
-        type="csv",
-        help="The file must contain the six columns used by the Spark aggregation.",
-    )
+    st.sidebar.markdown("## Dashboard controls")
+    if not DEFAULT_DATA_PATH.exists():
+        st.sidebar.error(f"Results file not found: {DEFAULT_DATA_PATH}")
+        st.stop()
 
-    source_name = uploaded_file.name if uploaded_file else DEFAULT_DATA_PATH.name
-    source_bytes = uploaded_file.getvalue() if uploaded_file else DEFAULT_DATA_PATH.read_bytes()
+    if st.sidebar.button("Refresh data", use_container_width=True):
+        load_csv.clear()
+        st.rerun()
+
     try:
-        dataframe = load_csv(source_bytes)
+        dataframe = load_csv(str(DEFAULT_DATA_PATH), DEFAULT_DATA_PATH.stat().st_mtime)
     except (OSError, ValueError, pd.errors.ParserError) as error:
         st.sidebar.error(str(error))
         st.stop()
 
-    st.sidebar.caption(f"Loaded: {source_name}")
+    st.sidebar.caption(f"Source: {DEFAULT_DATA_PATH.name}")
+    st.sidebar.caption("Data is managed by the project pipeline.")
     passenger_options = sorted(dataframe["passenger_count"].unique().tolist())
     selected_passengers = st.sidebar.multiselect(
         "Passenger count",
@@ -159,75 +170,122 @@ def main() -> None:
     total_revenue = filtered["total_revenue_usd"].sum()
     weighted_fare = (filtered["avg_fare_usd"] * filtered["total_trips"]).sum() / total_trips
     weighted_tip = (filtered["avg_tip_usd"] * filtered["total_trips"]).sum() / total_trips
+    weighted_distance = (filtered["avg_distance_miles"] * filtered["total_trips"]).sum() / total_trips
+    revenue_per_trip = total_revenue / total_trips
+    tip_rate = weighted_tip / weighted_fare if weighted_fare else 0
 
-    st.markdown('<div class="section-label">Snapshot</div>', unsafe_allow_html=True)
-    metric_columns = st.columns(4)
-    metric_columns[0].metric("Total trips", f"{total_trips:,.0f}")
-    metric_columns[1].metric("Total revenue", format_currency(total_revenue))
-    metric_columns[2].metric("Weighted avg fare", format_currency(weighted_fare))
-    metric_columns[3].metric("Weighted avg tip", format_currency(weighted_tip))
+    overview_tab, revenue_tab, trips_tab, data_tab = st.tabs(
+        ["Overview", "Revenue analysis", "Trip metrics", "Data table"]
+    )
 
-    chart_columns = st.columns(2)
-    with chart_columns[0]:
-        st.markdown('<div class="section-label">Revenue by passenger count</div>', unsafe_allow_html=True)
-        revenue_chart = px.bar(
+    with overview_tab:
+        st.markdown('<div class="section-label">Snapshot</div>', unsafe_allow_html=True)
+        metric_columns = st.columns(4)
+        metric_columns[0].metric("Total trips", f"{total_trips:,.0f}")
+        metric_columns[1].metric("Total revenue", format_currency(total_revenue))
+        metric_columns[2].metric("Revenue / trip", f"${revenue_per_trip:,.2f}")
+        metric_columns[3].metric("Tip rate", f"{tip_rate:.1%}")
+
+        overview_columns = st.columns(2)
+        with overview_columns[0]:
+            st.markdown('<div class="section-label">Revenue by passenger count</div>', unsafe_allow_html=True)
+            revenue_chart = px.bar(
+                filtered,
+                x="passenger_count",
+                y="total_revenue_usd",
+                text_auto="$.3s",
+                color="total_revenue_usd",
+                color_continuous_scale=["#b9d9e8", "#1769aa"],
+                labels={"passenger_count": "Passengers", "total_revenue_usd": "Revenue (USD)"},
+            )
+            revenue_chart.update_layout(coloraxis_showscale=False, height=360)
+            st.plotly_chart(revenue_chart, use_container_width=True)
+        with overview_columns[1]:
+            st.markdown('<div class="section-label">Fare and tip comparison</div>', unsafe_allow_html=True)
+            fare_chart = px.bar(
+                filtered,
+                x="passenger_count",
+                y=["avg_fare_usd", "avg_tip_usd"],
+                barmode="group",
+                labels={"passenger_count": "Passengers", "value": "Amount (USD)", "variable": "Metric"},
+                color_discrete_sequence=["#e08b2c", "#238b72"],
+            )
+            fare_chart.update_layout(height=360, legend_title_text="")
+            st.plotly_chart(fare_chart, use_container_width=True)
+
+    with revenue_tab:
+        st.markdown('<div class="section-label">Revenue dashboard</div>', unsafe_allow_html=True)
+        revenue_columns = st.columns(3)
+        revenue_columns[0].metric("Top revenue group", f"{int(filtered.loc[filtered.total_revenue_usd.idxmax(), 'passenger_count'])} passengers")
+        revenue_columns[1].metric("Highest fare", format_currency(filtered["avg_fare_usd"].max()))
+        revenue_columns[2].metric("Highest tip", format_currency(filtered["avg_tip_usd"].max()))
+
+        revenue_line = px.line(
             filtered,
             x="passenger_count",
-            y="total_revenue_usd",
-            text_auto="$.3s",
-            color="total_revenue_usd",
-            color_continuous_scale=["#b9d9e8", "#1769aa"],
-            labels={
-                "passenger_count": "Passengers",
-                "total_revenue_usd": "Revenue (USD)",
-            },
+            y=["total_revenue_usd", "total_trips"],
+            markers=True,
+            labels={"passenger_count": "Passengers", "value": "Value", "variable": "Metric"},
+            color_discrete_sequence=["#1769aa", "#e08b2c"],
         )
-        revenue_chart.update_layout(coloraxis_showscale=False, height=360)
-        st.plotly_chart(revenue_chart, use_container_width=True)
+        revenue_line.update_layout(height=420, legend_title_text="")
+        st.plotly_chart(revenue_line, use_container_width=True)
 
-    with chart_columns[1]:
-        st.markdown('<div class="section-label">Average fare and tip</div>', unsafe_allow_html=True)
-        fare_chart = px.bar(
+        revenue_share = px.pie(
             filtered,
-            x="passenger_count",
-            y=["avg_fare_usd", "avg_tip_usd"],
-            barmode="group",
-            labels={
-                "passenger_count": "Passengers",
-                "value": "Amount (USD)",
-                "variable": "Metric",
-            },
-            color_discrete_sequence=["#e08b2c", "#238b72"],
+            names="passenger_count",
+            values="total_revenue_usd",
+            hole=0.45,
+            labels={"passenger_count": "Passengers", "total_revenue_usd": "Revenue"},
         )
-        fare_chart.update_layout(height=360, legend_title_text="")
-        st.plotly_chart(fare_chart, use_container_width=True)
+        revenue_share.update_layout(height=400, legend_title_text="Passengers")
+        st.plotly_chart(revenue_share, use_container_width=True)
 
-    table_columns = [
-        "passenger_count",
-        "total_trips",
-        "avg_distance_miles",
-        "avg_fare_usd",
-        "avg_tip_usd",
-        "total_revenue_usd",
-    ]
-    display_data = filtered[table_columns].rename(
-        columns={
-            "passenger_count": "Passengers",
-            "total_trips": "Total trips",
-            "avg_distance_miles": "Avg distance (mi)",
-            "avg_fare_usd": "Avg fare (USD)",
-            "avg_tip_usd": "Avg tip (USD)",
-            "total_revenue_usd": "Total revenue (USD)",
-        }
-    )
-    st.markdown('<div class="section-label">Filtered results</div>', unsafe_allow_html=True)
-    st.dataframe(display_data, use_container_width=True, hide_index=True)
-    st.download_button(
-        "Download filtered CSV",
-        data=filtered.to_csv(index=False).encode("utf-8"),
-        file_name="nyc_taxi_filtered_results.csv",
-        mime="text/csv",
-    )
+    with trips_tab:
+        st.markdown('<div class="section-label">Trip metrics dashboard</div>', unsafe_allow_html=True)
+        trip_columns = st.columns(3)
+        trip_columns[0].metric("Avg distance", f"{weighted_distance:,.2f} mi")
+        trip_columns[1].metric("Avg fare", format_currency(weighted_fare))
+        trip_columns[2].metric("Avg tip", format_currency(weighted_tip))
+
+        distance_chart = px.scatter(
+            filtered,
+            x="avg_distance_miles",
+            y="avg_fare_usd",
+            size="total_trips",
+            color="passenger_count",
+            text="passenger_count",
+            labels={
+                "avg_distance_miles": "Average distance (miles)",
+                "avg_fare_usd": "Average fare (USD)",
+                "passenger_count": "Passengers",
+            },
+            color_continuous_scale=["#238b72", "#e08b2c", "#1769aa"],
+        )
+        distance_chart.update_traces(textposition="top center")
+        distance_chart.update_layout(height=440)
+        st.plotly_chart(distance_chart, use_container_width=True)
+
+    with data_tab:
+        table_columns = [
+            "passenger_count", "total_trips", "avg_distance_miles",
+            "avg_fare_usd", "avg_tip_usd", "total_revenue_usd",
+        ]
+        display_data = filtered[table_columns].rename(
+            columns={
+                "passenger_count": "Passengers", "total_trips": "Total trips",
+                "avg_distance_miles": "Avg distance (mi)", "avg_fare_usd": "Avg fare (USD)",
+                "avg_tip_usd": "Avg tip (USD)", "total_revenue_usd": "Total revenue (USD)",
+            }
+        )
+        st.markdown('<div class="section-label">Filtered results</div>', unsafe_allow_html=True)
+        st.dataframe(display_data, use_container_width=True, hide_index=True)
+        st.download_button(
+            "Download filtered CSV",
+            data=filtered.to_csv(index=False).encode("utf-8"),
+            file_name="nyc_taxi_filtered_results.csv",
+            mime="text/csv",
+        )
 
 
 if __name__ == "__main__":
