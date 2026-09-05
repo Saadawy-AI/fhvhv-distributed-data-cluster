@@ -24,64 +24,94 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+appearance = st.sidebar.selectbox(
+    "Appearance",
+    ["Auto", "Light", "Dark"],
+    help="Auto follows the appearance preference of your device/browser.",
+)
+appearance_class = appearance.lower()
+
 st.markdown(
     """
     <style>
     :root {
-        --ink: #17212b;
-        --muted: #66727d;
-        --line: #dfe6eb;
+        --ink: #14212b;
+        --muted: #5b6b78;
+        --line: #d7e1e8;
+        --surface: rgba(255, 255, 255, 0.86);
+        --canvas: #f3f7f8;
         --blue: #1769aa;
-        --gold: #e08b2c;
-        --mint: #238b72;
+        --blue-soft: #d8edf7;
+        --gold: #c46b16;
+        --mint: #147866;
+    }
+    .app-appearance-dark,
+    body:has(.app-appearance-dark) .stApp {
+        --ink: #ecf4f7;
+        --muted: #aebfc8;
+        --line: #334852;
+        --surface: rgba(25, 39, 46, 0.92);
+        --canvas: #101b20;
+        --blue: #6fc4e6;
+        --blue-soft: #244b5c;
+        --gold: #f1a24f;
+        --mint: #65c7ac;
+        color-scheme: dark;
+    }
+    @media (prefers-color-scheme: dark) {
+        body:has(.app-appearance-auto) .stApp {
+            --ink: #ecf4f7;
+            --muted: #aebfc8;
+            --line: #334852;
+            --surface: rgba(25, 39, 46, 0.92);
+            --canvas: #101b20;
+            --blue: #6fc4e6;
+            --blue-soft: #244b5c;
+            --gold: #f1a24f;
+            --mint: #65c7ac;
+            color-scheme: dark;
+        }
     }
     .stApp {
-        background: linear-gradient(135deg, #f7fafc 0%, #eef5f4 52%, #fff8ee 100%);
+        background: var(--canvas);
+        color: var(--ink);
     }
-    [data-testid="stSidebar"] {
-        background: #17212b;
+    .stApp::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.35;
+        background-image: linear-gradient(rgba(23, 105, 170, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(23, 105, 170, 0.035) 1px, transparent 1px);
+        background-size: 28px 28px;
     }
-    [data-testid="stSidebar"] * {
-        color: #f4f7f8;
-    }
+    .block-container { max-width: 1420px; padding-top: 2.2rem; padding-bottom: 3rem; }
+    [data-testid="stSidebar"] { background: #172a33; }
+    [data-testid="stSidebar"] * { color: #f4f7f8; }
     .hero {
-        padding: 1.4rem 1.7rem 1.2rem;
+        position: relative;
+        overflow: hidden;
+        padding: 2rem 2.2rem 1.8rem;
         border: 1px solid var(--line);
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.86);
-        box-shadow: 0 10px 28px rgba(23, 33, 43, 0.06);
+        background: var(--surface);
+        box-shadow: 0 16px 34px rgba(23, 33, 43, 0.08);
         margin-bottom: 1.1rem;
     }
-    .hero h1 {
-        color: var(--ink);
-        font-size: clamp(2rem, 4vw, 3.5rem);
-        line-height: 1.05;
-        margin: 0;
-    }
-    .hero p {
-        color: var(--muted);
-        margin: 0.65rem 0 0;
-        font-size: 1rem;
-    }
-    [data-testid="stMetricValue"] {
-        color: var(--blue);
-    }
-    [data-testid="stMetric"] {
-        background: rgba(255, 255, 255, 0.82);
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 0.8rem 1rem;
-    }
-    .section-label {
-        color: var(--muted);
-        font-size: 0.8rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin: 1.1rem 0 0.45rem;
-    }
+    .hero::after { content: ""; position: absolute; width: 190px; height: 190px; right: -54px; top: -74px; border: 26px solid var(--blue-soft); border-radius: 50%; opacity: 0.7; }
+    .hero h1 { color: var(--ink); font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.05; margin: 0; letter-spacing: 0; }
+    .hero p { color: var(--muted); margin: 0.65rem 0 0; font-size: 1rem; }
+    [data-testid="stMetricValue"] { color: var(--blue); }
+    [data-testid="stMetric"] { min-height: 112px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0.8rem 1rem; }
+    .section-label { color: var(--muted); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin: 1.1rem 0 0.45rem; }
+    [data-testid="stTabs"] button { color: var(--muted); font-weight: 700; }
+    [data-testid="stTabs"] button[aria-selected="true"] { color: var(--blue); }
+    [data-testid="stDataFrame"] { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .insight { border-left: 4px solid var(--gold); padding: 0.8rem 1rem; background: var(--surface); color: var(--ink); border-radius: 0 6px 6px 0; margin: 0.5rem 0 1rem; }
+    .js-plotly-plot .plotly .modebar-btn path, .js-plotly-plot .xtick text, .js-plotly-plot .ytick text, .js-plotly-plot .gtitle, .js-plotly-plot .legendtext { fill: var(--muted) !important; }
     </style>
-    """,
+    <div class="app-appearance-APPEARANCE_CLASS"></div>
+    """.replace("APPEARANCE_CLASS", appearance_class),
     unsafe_allow_html=True,
 )
 
@@ -121,6 +151,10 @@ def format_currency(value: float) -> str:
     return f"${value:,.0f}"
 
 
+def format_timestamp(file_path: Path) -> str:
+    return pd.to_datetime(file_path.stat().st_mtime, unit="s").strftime("%Y-%m-%d %H:%M")
+
+
 def render_sidebar() -> tuple[pd.DataFrame, list[int]]:
     st.sidebar.markdown("## Dashboard controls")
     if not DEFAULT_DATA_PATH.exists():
@@ -138,6 +172,7 @@ def render_sidebar() -> tuple[pd.DataFrame, list[int]]:
         st.stop()
 
     st.sidebar.caption(f"Source: {DEFAULT_DATA_PATH.name}")
+    st.sidebar.caption(f"Last updated: {format_timestamp(DEFAULT_DATA_PATH)}")
     st.sidebar.caption("Data is managed by the project pipeline.")
     passenger_options = sorted(dataframe["passenger_count"].unique().tolist())
     selected_passengers = st.sidebar.multiselect(
@@ -173,6 +208,8 @@ def main() -> None:
     weighted_distance = (filtered["avg_distance_miles"] * filtered["total_trips"]).sum() / total_trips
     revenue_per_trip = total_revenue / total_trips
     tip_rate = weighted_tip / weighted_fare if weighted_fare else 0
+    top_revenue_row = filtered.loc[filtered["total_revenue_usd"].idxmax()]
+    top_distance_row = filtered.loc[filtered["avg_distance_miles"].idxmax()]
 
     overview_tab, revenue_tab, trips_tab, data_tab = st.tabs(
         ["Overview", "Revenue analysis", "Trip metrics", "Data table"]
@@ -185,6 +222,14 @@ def main() -> None:
         metric_columns[1].metric("Total revenue", format_currency(total_revenue))
         metric_columns[2].metric("Revenue / trip", f"${revenue_per_trip:,.2f}")
         metric_columns[3].metric("Tip rate", f"{tip_rate:.1%}")
+        st.markdown(
+            f'<div class="insight"><strong>Key insight:</strong> '
+            f'{int(top_revenue_row["passenger_count"])}-passenger trips generate the highest '
+            f'revenue in the selected data ({format_currency(top_revenue_row["total_revenue_usd"])}). '
+            f'The longest average distance is {top_distance_row["avg_distance_miles"]:.2f} miles '
+            f'for {int(top_distance_row["passenger_count"])} passengers.</div>',
+            unsafe_allow_html=True,
+        )
 
         overview_columns = st.columns(2)
         with overview_columns[0]:
