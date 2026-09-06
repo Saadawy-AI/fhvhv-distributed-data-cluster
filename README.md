@@ -42,6 +42,15 @@ The project runs on a **4-device Kubernetes (K3s) cluster** spanning physically 
 
 ## Architecture
 
+<div align="center">
+<img src="assets/architecture-diagram.png" alt="Real-Time Data Platform Architecture" width="100%"/>
+</div>
+
+The project runs on a **4-device Kubernetes (K3s) cluster** spanning physically separate Windows machines, connected privately through **Tailscale Mesh VPN**. It covers the full data engineering lifecycle: ingestion → transformation → ML training → orchestration → analytics.
+
+<details>
+<summary><strong>Text-based cluster layout (click to expand)</strong></summary>
+
 ```text
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║              Tailscale Encrypted Mesh Network (100.x.x.x)               ║
@@ -58,6 +67,10 @@ The project runs on a **4-device Kubernetes (K3s) cluster** spanning physically 
 ║  JupyterLab          ║                                                   ║
 ╚══════════════════════╩═══════════════════════════════════════════════════╝
 ```
+
+</details>
+
+---
 
 ---
 
