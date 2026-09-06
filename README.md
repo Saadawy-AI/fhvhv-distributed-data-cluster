@@ -43,7 +43,7 @@ The project runs on a **4-device Kubernetes (K3s) cluster** spanning physically 
 ## Architecture
 
 <div align="center">
-<img src="assets/architecture-diagram.png" alt="Real-Time Data Platform Architecture" width="100%"/>
+<img src="https://raw.githubusercontent.com/Saadawy-AI/fhvhv-distributed-data-cluster/main/Project%20Architecture.jpg" alt="Real-Time Data Platform Architecture" width="100%"/>
 </div>
 
 The project runs on a **4-device Kubernetes (K3s) cluster** spanning physically separate Windows machines, connected privately through **Tailscale Mesh VPN**. It covers the full data engineering lifecycle: ingestion → transformation → ML training → orchestration → analytics.
